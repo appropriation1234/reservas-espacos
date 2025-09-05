@@ -1,35 +1,27 @@
 import React from 'react';
 
-const logoUrl = '/logo-cervantes.png';
+const logoUrl = '/logo-cervantes.png'; 
 
-const Header = ({ user, onAdminClick, onLogout, onHomeClick, title }) => {
+const Header = ({ title, onLogoClick, onLogout, user, onAdminClick }) => {
     return (
-        <header className="bg-white/75 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-200">
-            {/* A div interna agora controla a largura e o centramento */}
+        <header className="bg-white shadow-md w-full">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    {/* Lado Esquerdo */}
-                    <div className="flex items-center space-x-4">
-                        <button onClick={onHomeClick} className="flex-shrink-0">
-                            <img className="h-10 w-auto" src={logoUrl} alt="Colégio Miguel de Cervantes" />
+                <div className="flex justify-between items-center h-20">
+                    <div className="flex-shrink-0">
+                        <button onClick={onLogoClick}>
+                            <img className="h-14" src={logoUrl} alt="Colégio Miguel de Cervantes" />
                         </button>
-                        <h1 className="text-xl font-bold text-slate-700 hidden sm:block">{title}</h1>
                     </div>
-
-                    {/* Lado Direito */}
-                    <div className="flex items-center space-x-3">
+                    <div className="flex-grow text-center">
+                        <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+                    </div>
+                    <div className="flex items-center space-x-4">
                         {user && ['TI_Admin', 'Secretaria', 'ProdutorEventos'].includes(user.profile) && (
-                            <button 
-                                onClick={onAdminClick}
-                                className="bg-slate-800 text-white font-semibold py-2 px-3 rounded-lg shadow-md hover:bg-slate-900 transition-colors text-sm"
-                            >
+                            <button onClick={onAdminClick} className="bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-900 transition-colors">
                                 Admin
                             </button>
                         )}
-                        <button 
-                            onClick={onLogout}
-                            className="font-semibold text-sm text-slate-600 hover:text-red-600 transition-colors"
-                        >
+                        <button onClick={onLogout} className="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
                             Sair
                         </button>
                     </div>

@@ -1,6 +1,7 @@
 import React from 'react';
+import Header from '../components/Header';
 
-const ConfirmationPage = ({ reservationDetails, onConfirm, onBack }) => {
+const ConfirmationPage = ({ user, reservationDetails, onConfirm, onBack, onLogout, onHomeClick }) => {
     const { space, dateTime } = reservationDetails;
 
     const formattedDate = new Date(dateTime.date.replace(/-/g, '/')).toLocaleDateString('pt-BR', {
@@ -8,46 +9,44 @@ const ConfirmationPage = ({ reservationDetails, onConfirm, onBack }) => {
     });
 
     return (
-        <>
-            <button onClick={onBack} className="mb-6 text-blue-600 hover:underline font-semibold">
-                &larr; Voltar para alterar data/hora
-            </button>
-
-            <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
-                <h1 className="text-3xl font-bold text-slate-800 mb-2">Confirme o seu Pedido</h1>
-                <p className="text-slate-600 mb-8">Por favor, revise os detalhes da sua reserva.</p>
-
-                <div className="space-y-4 text-lg border-t border-b border-slate-200 py-6">
-                    <div className="flex justify-between">
-                        <span className="font-semibold text-slate-700">Espaço:</span>
-                        <span className="font-bold text-slate-900">{space.nome}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="font-semibold text-slate-700">Data:</span>
-                        <span className="font-bold text-slate-900">{formattedDate}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="font-semibold text-slate-700">Horário:</span>
-                        <span className="font-bold text-slate-900">{dateTime.startTime} - {dateTime.endTime}</span>
-                    </div>
-                    {space.localizacao && (
+        <div className="min-h-screen bg-gray-50">
+            <Header
+                user={user}
+                onLogout={onLogout}
+                onHomeClick={onHomeClick}
+                title="Confirmar Reserva"
+            />
+            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 w-full">
+                <button onClick={onBack} className="mb-6 font-semibold text-blue-600 hover:underline">
+                    &larr; Voltar
+                </button>
+                <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-md">
+                    <h1 className="text-2xl font-bold text-gray-800">Revise seu Pedido</h1>
+                    <div className="mt-6 space-y-4 text-md border-t pt-6">
                         <div className="flex justify-between">
-                            <span className="font-semibold text-slate-700">Localização:</span>
-                            <span className="font-bold text-slate-900">{space.localizacao}</span>
+                            <span className="text-gray-600">Espaço:</span>
+                            <span className="font-semibold text-gray-900">{space.nome}</span>
                         </div>
-                    )}
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Data:</span>
+                            <span className="font-semibold text-gray-900">{formattedDate}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Horário:</span>
+                            <span className="font-semibold text-gray-900">{dateTime.startTime} - {dateTime.endTime}</span>
+                        </div>
+                    </div>
+                    <div className="mt-8">
+                        <button 
+                            onClick={onConfirm}
+                            className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                            Confirmar e Enviar Pedido
+                        </button>
+                    </div>
                 </div>
-
-                <div className="mt-8">
-                    <button 
-                        onClick={onConfirm}
-                        className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors shadow-md"
-                    >
-                        Confirmar e Enviar Pedido
-                    </button>
-                </div>
-            </div>
-        </>
+            </main>
+        </div>
     );
 };
 

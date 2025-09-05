@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useMsal, MsalAuthenticationTemplate } from "@azure/msal-react";
+import { useMsal, MsalAuthenticationTemplate, useIsAuthenticated } from "@azure/msal-react";
 import { InteractionType } from "@azure/msal-browser";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { loginRequest } from './authConfig';
-import Layout from './components/Layout';
+
 import SelectSpacePage from './pages/SelectSpacePage';
 import DateTimePage from './pages/DateTimePage';
 import ConfirmationPage from './pages/ConfirmationPage';
@@ -13,31 +13,28 @@ import AdminSpacesPage from './pages/AdminSpacesPage';
 function ErrorComponent({ error }) {
     console.error(error);
     return (
-        <div className="flex items-center justify-center min-h-screen bg-slate-100">
-            <div className="text-center p-10 bg-white rounded-2xl shadow-xl max-w-md w-full">
-                <h1 className="text-2xl font-bold text-red-600 mb-4">Erro de Autenticação</h1>
-                <p>Por favor, volte ao portal principal e tente fazer o login novamente.</p>
-                <a 
-                    href="http://localhost:5174"
-                    className="mt-6 inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    Voltar ao Portal
-                </a>
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center p-10 bg-white rounded-lg shadow-lg">
+                <h1 className="text-xl font-bold text-red-600">Erro de Autenticação</h1>
+                <p className="mt-2">Por favor, volte ao portal e tente novamente.</p>
+                <a href="http://localhost:5174" className="mt-4 inline-block bg-blue-600 text-white py-2 px-4 rounded">Voltar ao Portal</a>
             </div>
         </div>
     );
 }
 
-function MainContent() {
-    const { accounts, instance } = useMsal();
+const App = () => {
+    const { instance, accounts } = useMsal();
+    const isAuthenticated = useIsAuthenticated();
+
     const [user, setUser] = useState(null);
     const [page, setPage] = useState('selectSpace');
     const [reservationFlow, setReservationFlow] = useState({});
-    const [isLoadingUser, setIsLoadingUser] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchInternalUser = async () => {
-            if (accounts.length > 0) {
+        const checkUser = async () => {
+            if (isAuthenticated && accounts.length > 0 && !user) {
                 const userEmail = accounts[0].username;
                 try {
                     const response = await fetch('http://localhost:3001/api/login', {
@@ -51,23 +48,23 @@ function MainContent() {
                 } catch (error) {
                     toast.error(error.message);
                 } finally {
-                    setIsLoadingUser(false);
+                    setIsLoading(false);
                 }
+            } else if (!isAuthenticated) {
+                setIsLoading(false);
             }
         };
-        fetchInternalUser();
-    }, [accounts]);
+        checkUser();
+    }, [isAuthenticated, accounts, user, instance]);
 
     const handleSpaceClick = (space) => {
         setReservationFlow({ space });
         setPage('selectDateTime');
     };
-
     const handleDateTimeSubmit = (dateTimeDetails) => {
         setReservationFlow(prev => ({ ...prev, dateTime: dateTimeDetails }));
         setPage('confirmation');
     };
-    
     const handleConfirmReservation = async () => {
         const { space, dateTime } = reservationFlow;
         const reservationData = {
@@ -85,7 +82,7 @@ function MainContent() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(reservationData)
             });
-            if (!response.ok) throw new Error("Falha ao enviar o pedido de reserva.");
+            if (!response.ok) throw new Error("Falha ao enviar o pedido.");
             toast.success("Pedido de reserva enviado com sucesso!");
             setPage('selectSpace');
             setReservationFlow({});
@@ -93,71 +90,47 @@ function MainContent() {
             toast.error(error.message);
         }
     };
-    
     const handleBackToHome = () => {
         setPage('selectSpace');
         setReservationFlow({});
     };
-
     const handleLogout = () => {
         instance.logoutRedirect({ postLogoutRedirectUri: "http://localhost:5174" });
     };
 
-    if (isLoadingUser) {
-        return <div className="flex items-center justify-center min-h-screen"><p>A verificar dados do utilizador...</p></div>;
-    }
+    const renderPage = () => {
+        if (isLoading || (isAuthenticated && !user)) {
+            return <div className="flex items-center justify-center min-h-screen"><p>A carregar...</p></div>;
+        }
+        if (!isAuthenticated) {
+            return <div><p>Por favor, faça o login através do portal.</p></div>;
+        }
 
-    if (!user) {
-        return (
-             <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center p-10 bg-white rounded-2xl shadow-xl max-w-md w-full">
-                    <h1 className="text-2xl font-bold text-red-600 mb-4">Utilizador não Encontrado</h1>
-                </div>
-            </div>
-        );
-    }
-
-    const renderPageContent = () => {
         switch (page) {
             case 'selectDateTime':
-                return <DateTimePage space={reservationFlow.space} onDateTimeSubmit={handleDateTimeSubmit} onBack={() => setPage('selectSpace')} />;
+                return <DateTimePage user={user} space={reservationFlow.space} onDateTimeSubmit={handleDateTimeSubmit} onBack={() => setPage('selectSpace')} onLogout={handleLogout} onHomeClick={handleBackToHome} />;
             case 'confirmation':
-                return <ConfirmationPage reservationDetails={reservationFlow} onConfirm={handleConfirmReservation} onBack={() => setPage('selectDateTime')} />;
+                return <ConfirmationPage user={user} reservationDetails={reservationFlow} onConfirm={handleConfirmReservation} onBack={() => setPage('selectDateTime')} onLogout={handleLogout} onHomeClick={handleBackToHome} />;
             case 'adminSpaces':
-                return <AdminSpacesPage user={user} />;
+                return <AdminSpacesPage user={user} onBack={handleBackToHome} onLogout={handleLogout} />;
             case 'selectSpace':
             default:
-                return <SelectSpacePage onSpaceClick={handleSpaceClick} />;
+                return <SelectSpacePage user={user} onSpaceClick={handleSpaceClick} onAdminClick={() => setPage('adminSpaces')} onLogout={handleLogout} onHomeClick={handleBackToHome} />;
         }
     };
 
     return (
-        <Layout 
-            user={user} 
-            onAdminClick={() => setPage('adminSpaces')} 
-            onLogout={handleLogout} 
-            onHomeClick={handleBackToHome}
-            title={page === 'adminSpaces' ? 'Painel de Administração' : 'Reservar um Espaço'}
-        >
-            {renderPageContent()}
-        </Layout>
-    );
-}
-
-function App() {
-     return (
-        <>
-            <MsalAuthenticationTemplate 
+        <div className="bg-gray-100">
+             <MsalAuthenticationTemplate 
                 interactionType={InteractionType.Redirect} 
                 authenticationRequest={loginRequest}
                 errorComponent={ErrorComponent} 
-                loadingComponent={() => <div className="flex items-center justify-center min-h-screen"><p>A iniciar autenticação...</p></div>}
             >
-                <MainContent />
+                {renderPage()}
             </MsalAuthenticationTemplate>
             <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} />
-        </>
+        </div>
     );
-}
+};
 
 export default App;

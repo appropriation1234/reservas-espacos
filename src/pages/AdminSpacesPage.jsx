@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import Header from '../components/Header';
 
 const ReservationModal = ({ reservation, user, onClose, onUpdate }) => {
-    // A verificação 'if (!reservation) return null;' é feita antes de chamar o modal
     const [observacao, setObservacao] = useState('');
-
     const handleAction = (acao) => {
         if ((acao === 'recusar_secretaria' || acao === 'recusar_produtor') && !observacao.trim()) {
-            toast.warn('Por favor, forneça uma observação/motivo para a recusa.');
+            toast.warn('Por favor, forneça o motivo da recusa.');
             return;
         }
         onUpdate(reservation.ReservaEspacoID, acao, observacao);
@@ -16,61 +15,49 @@ const ReservationModal = ({ reservation, user, onClose, onUpdate }) => {
     const renderActionButtons = () => {
         const perfil = user.profile;
         const status = reservation.Status;
-
         if (status === 'Aguardando Secretaria' && perfil === 'Secretaria') {
             return (
                 <>
-                    <textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Adicionar observação (obrigatório para recusa)..." className="w-full mt-4 p-2 border rounded" />
+                    <textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Motivo (obrigatório para recusa)..." className="w-full mt-4 p-2 border rounded" />
                     <div className="mt-4 grid grid-cols-2 gap-4">
-                        <button onClick={() => handleAction('aprovar_secretaria')} className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">Aprovar (Secretaria)</button>
-                        <button onClick={() => handleAction('recusar_secretaria')} className="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">Recusar</button>
+                        <button onClick={() => handleAction('aprovar_secretaria')} className="bg-green-600 text-white py-2 rounded hover:bg-green-700">Aprovar</button>
+                        <button onClick={() => handleAction('recusar_secretaria')} className="bg-red-600 text-white py-2 rounded hover:bg-red-700">Recusar</button>
                     </div>
                 </>
             );
         }
-
         if (status === 'Aguardando Produtor' && perfil === 'ProdutorEventos') {
             return (
                 <>
-                    <textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Adicionar observação (obrigatório para recusa)..." className="w-full mt-4 p-2 border rounded" />
+                    <textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Motivo (obrigatório para recusa)..." className="w-full mt-4 p-2 border rounded" />
                     <div className="mt-4 grid grid-cols-2 gap-4">
-                        <button onClick={() => handleAction('aprovar_produtor')} className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">Aprovação Final</button>
-                        <button onClick={() => handleAction('recusar_produtor')} className="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">Recusar</button>
+                        <button onClick={() => handleAction('aprovar_produtor')} className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Aprovação Final</button>
+                        <button onClick={() => handleAction('recusar_produtor')} className="bg-red-600 text-white py-2 rounded hover:bg-red-700">Recusar</button>
                     </div>
                 </>
             );
         }
-
-        // TI_Admin também pode precisar de ações, mas por enquanto só visualiza
-        if (perfil === 'TI_Admin' && (status === 'Aguardando Secretaria' || status === 'Aguardando Produtor')) {
-             return <p className="mt-4 text-sm text-gray-500 italic">Como TI_Admin, você pode visualizar o processo. As ações são da Secretaria e do Produtor.</p>;
-        }
-        
-        return <p className="mt-4 text-sm text-gray-500 italic">Nenhuma ação disponível para o seu perfil nesta etapa.</p>;
+        return <p className="mt-4 text-sm text-gray-500 italic">Nenhuma ação disponível para o seu perfil.</p>;
     };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg animate-fade-in-up">
+            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
                 <h2 className="text-xl font-bold mb-4">Detalhes da Reserva</h2>
                 <div className="space-y-2 border-t border-b py-4">
                     <p><strong>Espaço:</strong> {reservation.NomeEspaco}</p>
                     <p><strong>Solicitante:</strong> {reservation.NomeUsuario}</p>
-                    <p><strong>Data:</strong> {new Date(reservation.DataInicio).toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })}</p>
-                    <p><strong>Status Atual:</strong> <span className="font-semibold">{reservation.Status}</span></p>
-                    {reservation.SecretariaObservacao && <p className="text-sm text-gray-600"><strong>Obs. Secretaria:</strong> {reservation.SecretariaObservacao}</p>}
-                    {reservation.ObservacoesRecusa && <p className="text-sm text-red-600"><strong>Motivo Recusa:</strong> {reservation.ObservacoesRecusa}</p>}
+                    <p><strong>Data:</strong> {new Date(reservation.DataInicio).toLocaleString('pt-BR')}</p>
+                    <p><strong>Status:</strong> {reservation.Status}</p>
                 </div>
-                
                 {renderActionButtons()}
-
-                <button onClick={onClose} className="w-full mt-4 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600">Fechar</button>
+                <button onClick={onClose} className="w-full mt-4 bg-gray-500 text-white py-2 rounded hover:bg-gray-600">Fechar</button>
             </div>
         </div>
     );
 };
 
-const AdminSpacesPage = ({ user }) => {
+const AdminSpacesPage = ({ user, onBack, onLogout }) => {
     const [reservations, setReservations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedReservation, setSelectedReservation] = useState(null);
@@ -79,7 +66,7 @@ const AdminSpacesPage = ({ user }) => {
         setIsLoading(true);
         try {
             const response = await fetch(`http://localhost:3001/api/admin/reservas-espacos?userId=${user.id}&userProfile=${user.profile}`);
-            if (!response.ok) throw new Error('Falha ao buscar as reservas.');
+            if (!response.ok) throw new Error('Falha ao buscar reservas.');
             const data = await response.json();
             setReservations(data);
         } catch (error) {
@@ -98,103 +85,75 @@ const AdminSpacesPage = ({ user }) => {
             const response = await fetch(`http://localhost:3001/api/admin/reservas-espacos/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    acao: acao,
-                    aprovadorId: user.id,
-                    observacao: observacao
-                })
+                body: JSON.stringify({ acao, aprovadorId: user.id, observacao })
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Falha ao atualizar o status.');
             }
-
             const result = await response.json();
             toast.success(result.message);
             setSelectedReservation(null);
             fetchAdminReservations();
         } catch (error) {
-            console.error("Erro na atualização:", error);
             toast.error(error.message);
         }
     };
 
-    // A filtragem foi removida daqui, pois o backend já faz a lógica de visibilidade
-    const reservationsToDisplay = reservations;
-
     return (
-        <>
-            <h1 className="text-3xl font-bold mb-6 text-slate-800">Gestão de Reservas de Espaços</h1>
-
-            {isLoading ? (
-                <p>A carregar reservas...</p>
-            ) : (
-                <div className="bg-white shadow-lg rounded-lg overflow-x-auto">
-                    <table className="min-w-full leading-normal">
-                        <thead className="bg-slate-100">
-                            <tr>
-                                <th className="px-5 py-3 border-b-2 border-slate-200 text-left text-xs font-semibold text-gray-600 uppercase">Solicitante</th>
-                                <th className="px-5 py-3 border-b-2 border-slate-200 text-left text-xs font-semibold text-gray-600 uppercase">Espaço</th>
-                                <th className="px-5 py-3 border-b-2 border-slate-200 text-left text-xs font-semibold text-gray-600 uppercase">Data & Hora</th>
-                                <th className="px-5 py-3 border-b-2 border-slate-200 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                                <th className="px-5 py-3 border-b-2 border-slate-200 text-left text-xs font-semibold text-gray-600 uppercase">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {reservationsToDisplay.length > 0 ? reservationsToDisplay.map(res => {
-                                const canAct = 
-                                    (user.profile === 'Secretaria' && res.Status === 'Aguardando Secretaria') ||
-                                    (user.profile === 'ProdutorEventos' && res.Status === 'Aguardando Produtor');
-                                    // TI_Admin pode ver tudo, mas as ações são específicas dos perfis
-
-                                return (
-                                    <tr key={res.ReservaEspacoID} className="border-b border-gray-200 hover:bg-slate-50">
-                                        <td className="px-5 py-5 text-sm">{res.NomeUsuario}</td>
-                                        <td className="px-5 py-5 text-sm font-semibold">{res.NomeEspaco}</td>
-                                        <td className="px-5 py-5 text-sm">{new Date(res.DataInicio).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
-                                        <td className="px-5 py-5 text-sm">
-                                            <span className={`px-2 py-1 font-semibold leading-tight rounded-full text-xs ${
-                                                res.Status === 'Aguardando Secretaria' ? 'bg-orange-200 text-orange-900' :
-                                                res.Status === 'Aguardando Produtor' ? 'bg-yellow-200 text-yellow-900' :
-                                                res.Status === 'Aprovada' ? 'bg-green-200 text-green-900' :
-                                                res.Status === 'Recusada' ? 'bg-red-200 text-red-900' :
-                                                'bg-gray-200 text-gray-900'
-                                            }`}>
-                                                {res.Status}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-5 text-sm">
-                                            <button 
-                                                onClick={() => setSelectedReservation(res)}
-                                                className={`px-3 py-1 rounded-full text-white text-xs font-bold ${canAct ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400'}`}
-                                            >
-                                                {canAct ? 'Processar' : 'Ver Detalhes'}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                );
-                            }) : (
+        <div className="min-h-screen bg-gray-100">
+            <Header
+                user={user}
+                onLogout={onLogout}
+                onHomeClick={onBack}
+                title="Painel de Administração"
+            />
+            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 w-full">
+                {isLoading ? <p>A carregar reservas...</p> : (
+                    <div className="bg-white shadow-lg rounded-lg overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead className="bg-gray-50">
                                 <tr>
-                                    <td colSpan="5" className="text-center py-10 text-gray-500">
-                                        Nenhuma reserva encontrada para o seu perfil.
-                                    </td>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Espaço</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data & Hora</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-            
-            {selectedReservation && (
-                <ReservationModal
-                    reservation={selectedReservation}
-                    user={user}
-                    onClose={() => setSelectedReservation(null)}
-                    onUpdate={handleUpdateStatus}
-                />
-            )}
-        </>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {reservations.map(res => {
+                                    const canAct = (user.profile === 'Secretaria' && res.Status === 'Aguardando Secretaria') || (user.profile === 'ProdutorEventos' && res.Status === 'Aguardando Produtor');
+                                    return (
+                                        <tr key={res.ReservaEspacoID} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{res.NomeUsuario}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">{res.NomeEspaco}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(res.DataInicio).toLocaleString('pt-BR')}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                    res.Status === 'Aguardando Secretaria' ? 'bg-yellow-100 text-yellow-800' :
+                                                    res.Status === 'Aguardando Produtor' ? 'bg-orange-100 text-orange-800' :
+                                                    res.Status === 'Aprovada' ? 'bg-green-100 text-green-800' :
+                                                    'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {res.Status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onClick={() => setSelectedReservation(res)} className="text-indigo-600 hover:text-indigo-900">
+                                                    {canAct ? 'Processar' : 'Ver Detalhes'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </main>
+            {selectedReservation && <ReservationModal reservation={selectedReservation} user={user} onClose={() => setSelectedReservation(null)} onUpdate={handleUpdateStatus} />}
+        </div>
     );
 };
 
