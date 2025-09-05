@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import Header from '../components/Header';
 
-const DateTimePage = ({ user, space, onDateTimeSubmit, onBack, onLogout, onHomeClick }) => {
+const DateTimePage = ({ user, space, onDateTimeSubmit, onBack, onLogout, onHomeClick, onMyReservationsClick }) => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [startTime, setStartTime] = useState('09:00');
     const [endTime, setEndTime] = useState('10:00');
@@ -17,14 +17,15 @@ const DateTimePage = ({ user, space, onDateTimeSubmit, onBack, onLogout, onHomeC
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center min-h-screen bg-gray-100">
             <Header
                 user={user}
                 onLogout={onLogout}
                 onHomeClick={onHomeClick}
+                onMyReservationsClick={onMyReservationsClick}
                 title={`Reservar: ${space.nome}`}
             />
-            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 w-full">
+            <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 <button onClick={onBack} className="mb-6 font-semibold text-blue-600 hover:underline">
                     &larr; Voltar
                 </button>

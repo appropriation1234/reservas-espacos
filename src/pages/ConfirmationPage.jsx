@@ -1,7 +1,7 @@
 import React from 'react';
 import Header from '../components/Header';
 
-const ConfirmationPage = ({ user, reservationDetails, onConfirm, onBack, onLogout, onHomeClick }) => {
+const ConfirmationPage = ({ user, reservationDetails, onConfirm, onBack, onLogout, onHomeClick, onMyReservationsClick }) => {
     const { space, dateTime } = reservationDetails;
 
     const formattedDate = new Date(dateTime.date.replace(/-/g, '/')).toLocaleDateString('pt-BR', {
@@ -9,14 +9,15 @@ const ConfirmationPage = ({ user, reservationDetails, onConfirm, onBack, onLogou
     });
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center min-h-screen bg-gray-100">
             <Header
                 user={user}
                 onLogout={onLogout}
                 onHomeClick={onHomeClick}
+                onMyReservationsClick={onMyReservationsClick}
                 title="Confirmar Reserva"
             />
-            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 w-full">
+            <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 <button onClick={onBack} className="mb-6 font-semibold text-blue-600 hover:underline">
                     &larr; Voltar
                 </button>

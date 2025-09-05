@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
-import './index.css';
+import './index.css'; // ESTA LINHA É ESSENCIAL
 
 import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
-import { msalConfig } from "./authConfig"; // Vamos criar este ficheiro
+import { msalConfig } from "./authConfig";
 
 const msalInstance = new PublicClientApplication(msalConfig);
 

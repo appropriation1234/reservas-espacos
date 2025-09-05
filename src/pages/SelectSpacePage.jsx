@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Header from '../components/Header';
 
-const SelectSpacePage = ({ user, onSpaceClick, onAdminClick, onLogout, onHomeClick }) => {
+const SelectSpacePage = ({ user, onSpaceClick, onAdminClick, onLogout, onHomeClick, onMyReservationsClick }) => {
     const [spaces, setSpaces] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -29,10 +29,11 @@ const SelectSpacePage = ({ user, onSpaceClick, onAdminClick, onLogout, onHomeCli
                 user={user}
                 onAdminClick={onAdminClick}
                 onLogout={onLogout}
-                onLogoClick={onHomeClick}
+                onHomeClick={onHomeClick}
+                onMyReservationsClick={onMyReservationsClick}
                 title="Reservar um Espaço"
             />
-            <main className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+            <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 {isLoading ? (
                     <p className="text-center text-gray-500">A carregar...</p>
                 ) : (

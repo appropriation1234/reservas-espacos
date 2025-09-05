@@ -57,7 +57,7 @@ const ReservationModal = ({ reservation, user, onClose, onUpdate }) => {
     );
 };
 
-const AdminSpacesPage = ({ user, onBack, onLogout }) => {
+const AdminSpacesPage = ({ user, onBack, onLogout, onMyReservationsClick }) => {
     const [reservations, setReservations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedReservation, setSelectedReservation] = useState(null);
@@ -101,14 +101,16 @@ const AdminSpacesPage = ({ user, onBack, onLogout }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="flex flex-col items-center min-h-screen bg-gray-100">
             <Header
                 user={user}
                 onLogout={onLogout}
                 onHomeClick={onBack}
+                onMyReservationsClick={onMyReservationsClick}
                 title="Painel de Administração"
+                onAdminClick={() => {}}
             />
-            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 w-full">
+            <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 {isLoading ? <p>A carregar reservas...</p> : (
                     <div className="bg-white shadow-lg rounded-lg overflow-x-auto">
                         <table className="min-w-full">

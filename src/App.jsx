@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useMsal, MsalAuthenticationTemplate, useIsAuthenticated } from "@azure/msal-react";
 import { InteractionType } from "@azure/msal-browser";
 import { ToastContainer, toast } from 'react-toastify';
@@ -9,6 +9,13 @@ import SelectSpacePage from './pages/SelectSpacePage';
 import DateTimePage from './pages/DateTimePage';
 import ConfirmationPage from './pages/ConfirmationPage';
 import AdminSpacesPage from './pages/AdminSpacesPage';
+import MySpaceReservationsPage from './pages/MySpaceReservationsPage';
+
+const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+};
 
 function ErrorComponent({ error }) {
     console.error(error);
@@ -16,7 +23,7 @@ function ErrorComponent({ error }) {
         <div className="flex items-center justify-center min-h-screen">
             <div className="text-center p-10 bg-white rounded-lg shadow-lg">
                 <h1 className="text-xl font-bold text-red-600">Erro de Autenticação</h1>
-                <p className="mt-2">Por favor, volte ao portal e tente novamente.</p>
+                <p className="mt-2">Por favor, volte ao portal e tente fazer o login novamente.</p>
                 <a href="http://localhost:5174" className="mt-4 inline-block bg-blue-600 text-white py-2 px-4 rounded">Voltar ao Portal</a>
             </div>
         </div>
@@ -31,6 +38,25 @@ const App = () => {
     const [page, setPage] = useState('selectSpace');
     const [reservationFlow, setReservationFlow] = useState({});
     const [isLoading, setIsLoading] = useState(true);
+    const [mySpaceReservations, setMySpaceReservations] = useState([]);
+
+    useEffect(() => {
+        if (!isAuthenticated && !getCookie('userIsAuthenticated')) {
+            window.location.href = 'http://localhost:5174';
+        }
+    }, [isAuthenticated]);
+
+    const fetchMySpaceReservations = useCallback(async (userId) => {
+        if (!userId) return;
+        try {
+            const response = await fetch(`http://localhost:3001/api/usuarios/${userId}/reservas-espacos`);
+            if (!response.ok) throw new Error('Não foi possível buscar suas reservas de espaços.');
+            const data = await response.json();
+            setMySpaceReservations(data);
+        } catch (error) {
+            toast.error(error.message);
+        }
+    }, []);
 
     useEffect(() => {
         const checkUser = async () => {
@@ -42,9 +68,10 @@ const App = () => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email: userEmail })
                     });
-                    if (!response.ok) throw new Error("Utilizador não registado no sistema.");
+                    if (!response.ok) throw new Error("Utilizador não registado.");
                     const userData = await response.json();
                     setUser(userData);
+                    fetchMySpaceReservations(userData.id);
                 } catch (error) {
                     toast.error(error.message);
                 } finally {
@@ -55,7 +82,7 @@ const App = () => {
             }
         };
         checkUser();
-    }, [isAuthenticated, accounts, user, instance]);
+    }, [isAuthenticated, accounts, user, instance, fetchMySpaceReservations]);
 
     const handleSpaceClick = (space) => {
         setReservationFlow({ space });
@@ -90,32 +117,51 @@ const App = () => {
             toast.error(error.message);
         }
     };
+    const handleCancelSpaceReservation = async (reservationId, motivo) => {
+        try {
+            const response = await fetch(`http://localhost:3001/api/reservas-espacos/${reservationId}/cancelar`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motivo, userId: user.id })
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Falha ao cancelar a reserva.');
+            }
+            toast.success('Reserva cancelada com sucesso.');
+            fetchMySpaceReservations(user.id);
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
     const handleBackToHome = () => {
         setPage('selectSpace');
         setReservationFlow({});
     };
     const handleLogout = () => {
-        instance.logoutRedirect({ postLogoutRedirectUri: "http://localhost:5174" });
+        window.location.href = 'http://localhost:5174';
     };
 
     const renderPage = () => {
         if (isLoading || (isAuthenticated && !user)) {
             return <div className="flex items-center justify-center min-h-screen"><p>A carregar...</p></div>;
         }
-        if (!isAuthenticated) {
-            return <div><p>Por favor, faça o login através do portal.</p></div>;
+        if (!isAuthenticated || !user) {
+            return <div><p>A redirecionar para o portal...</p></div>;
         }
 
         switch (page) {
             case 'selectDateTime':
-                return <DateTimePage user={user} space={reservationFlow.space} onDateTimeSubmit={handleDateTimeSubmit} onBack={() => setPage('selectSpace')} onLogout={handleLogout} onHomeClick={handleBackToHome} />;
+                return <DateTimePage user={user} space={reservationFlow.space} onDateTimeSubmit={handleDateTimeSubmit} onBack={() => setPage('selectSpace')} onLogout={handleLogout} onHomeClick={handleBackToHome} onMyReservationsClick={() => setPage('mySpaceReservations')} />;
             case 'confirmation':
-                return <ConfirmationPage user={user} reservationDetails={reservationFlow} onConfirm={handleConfirmReservation} onBack={() => setPage('selectDateTime')} onLogout={handleLogout} onHomeClick={handleBackToHome} />;
+                return <ConfirmationPage user={user} reservationDetails={reservationFlow} onConfirm={handleConfirmReservation} onBack={() => setPage('selectDateTime')} onLogout={handleLogout} onHomeClick={handleBackToHome} onMyReservationsClick={() => setPage('mySpaceReservations')} />;
             case 'adminSpaces':
-                return <AdminSpacesPage user={user} onBack={handleBackToHome} onLogout={handleLogout} />;
+                return <AdminSpacesPage user={user} onBack={handleBackToHome} onLogout={handleLogout} onMyReservationsClick={() => setPage('mySpaceReservations')} />;
+            case 'mySpaceReservations':
+                return <MySpaceReservationsPage user={user} reservations={mySpaceReservations} onCancelReservation={handleCancelSpaceReservation} onLogout={handleLogout} onHomeClick={handleBackToHome} onMyReservationsClick={() => setPage('mySpaceReservations')} />;
             case 'selectSpace':
             default:
-                return <SelectSpacePage user={user} onSpaceClick={handleSpaceClick} onAdminClick={() => setPage('adminSpaces')} onLogout={handleLogout} onHomeClick={handleBackToHome} />;
+                return <SelectSpacePage user={user} onSpaceClick={handleSpaceClick} onAdminClick={() => setPage('adminSpaces')} onLogout={handleLogout} onHomeClick={handleBackToHome} onMyReservationsClick={() => setPage('mySpaceReservations')} />;
         }
     };
 
